@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+  echo "Usage: fix-permissions <directory>"
+  exit 1
+fi
+
+TARGET_DIR=$1
+
+# Fix ownership
+chown -R ${NB_UID}:${NB_GID:-${NB_UID}} ${TARGET_DIR}
+
+# Fix permissions
+find ${TARGET_DIR} -type d -exec chmod 755 {} \;
+find ${TARGET_DIR} -type f -exec chmod 644 {} \;
+

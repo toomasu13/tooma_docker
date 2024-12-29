@@ -1,0 +1,46 @@
+name: py3
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10.10
+  - jupyter
+  - jupyter_contrib_nbextensions 
+  - jupyterlab
+  - jupyterlab-git
+  - jupyter-dash
+  - jupyterlab-plotly-extension
+  - jupyterlab_execute_time
+  - jupyterlab-drawio
+  - pyarrow
+  - joblib
+  - pandas
+  - numpy 
+  - blas 
+  - scikit-learn
+  - xgboost
+  - lightgbm 
+  - eli5 
+  - shap
+  - scikit-optimize 
+  - hyperopt 
+  - imbalanced-learn 
+  - requests 
+  - thefuzz 
+  - python-levenshtein 
+  - matplotlib
+  - seaborn 
+  - scikit-image 
+  - pydot
+  - openpyxl 
+  - xlrd 
+  - nbconvert
+  - sqlalchemy
+  - snowflake-connector-python 
+  - snowflake-sqlalchemy 
+  - schedule
+  - alpha_vantage 
+  - pip:
+      - arcticdb
+      - yahooquery
+      - financedatabase
+      - pyml_toolbox

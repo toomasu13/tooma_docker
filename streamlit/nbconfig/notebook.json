@@ -1,0 +1,19 @@
+{
+  "load_extensions": {
+    "collapsible_headings/main": true,
+    "highlight_selected_word/main": true,
+    "toc2/main": true,
+    "code_prettify/2to3": true,
+    "execute_time/ExecuteTime": true,
+    "codefolding/main": true,
+    "keyboard_shortcut_editor/main": true,
+    "code_prettify/autopep8": false,
+    "comment-uncomment/main": true,
+    "varInspector/main": true
+  },
+  "Cell": {
+    "cm_config": {
+      "lineNumbers": true
+    }
+  }
+}
