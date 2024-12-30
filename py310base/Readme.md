@@ -1,122 +1,146 @@
+# Python 31010 Base Docker Image
 
-This Dockerfile sets up a Docker image based on the latest Debian distribution and installs various core packages and tools. The image is designed for running Jupyter notebooks and JupyterLab in a specific Python environment. Let's break down the Dockerfile and associated scripts:
-Dockerfile:
+This Docker image provides a pre-configured development environment based on Debian, with Micromamba for Conda environment management and both Jupyter Notebook and JupyterLab support. It includes essential development tools and a customizable Python environment.
 
-    Base Image:
+## Key Features
 
-    Dockerfile
+* **Debian Base:** Built on the latest Debian image for stability and security.
+* **Core Development Tools:** Includes essential tools like `curl`, `git`, `wget`, `htop`, `mc`, `sudo`, and `bzip2`.
+* **Micromamba:**  Provides a fast and efficient package manager for creating and managing isolated Python environments.
+* **Customizable Python Environment:**  Allows specifying the Python version during build time.
+* **Non-Root User:** Runs processes as a non-root user (`toomas` by default) for enhanced security.
+* **Jupyter Ready:** Pre-configured for both Jupyter Notebook and JupyterLab, accessible without tokens or passwords.
+* **Easy Environment Creation:** Creates a Conda environment based on a provided YAML file.
+* **Simultaneous Jupyter Notebook and Lab:** Starts both Jupyter Notebook and JupyterLab on different ports.
+* **Interactive Bash Shell:**  Opens a Bash shell after starting Jupyter services.
 
-FROM debian:latest
+## Prerequisites
 
-Environment Variables:
+* Docker installed on your system.
 
-Dockerfile
+## Building the Image
 
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+1. **Save the Dockerfile:** Ensure the provided Dockerfile is saved as `Dockerfile.base` in your project directory.
+2. **Create the environment YAML file:** Create a YAML file (e.g., `py31010sl.yml`) in the same directory as your Dockerfile. This file should list the additional Python packages your project needs, including Streamlit and any data science libraries. For example:
 
-Install Core Packages:
+   ```yaml
+   name: py3
+   channels:
+     - conda-forge
+   dependencies:
+     - python=3.10.10  # Or your desired Python version
+     - pandas
+     - numpy
+     - pip:
+         - arcticdb
+         - streamlit
+     # Add other dependencies here
+   ```
 
-Dockerfile
+2. **Navigate to the directory:** Open your terminal and navigate to the directory containing the `Dockerfile.base`.
+3. **Build the image:** Run the following command to build the Docker image. You can customize the Python version, username, and user ID using the build arguments:
 
-RUN apt-get update --fix-missing && \
-    apt-get install -y \
-        bzip2 \
-        ca-certificates \
-        curl \
-        git \
-        htop \
-        libgtk-3-dev \
-        mc \
-        wget \
-    && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+   ```bash
+   docker build -f Dockerfile.base \
+       --build-arg PY_VER=py31010 \
+       --build-arg ARG_USER=toomas \
+       --build-arg ARG_UID=1000 \
+       -t py31010 .
+   ```
 
-Copy and Set Permissions for a Custom Script:
+   **Explanation of build arguments:**
 
-Dockerfile
+   * `--build-arg PY_VER=py31010`: Specifies the Python version to be used for the Conda environment. You'll need a corresponding YAML file (e.g., `py31010.yml`) in the same directory as your Dockerfile. This YAML file should define the Python version and any other packages you want to install in the base environment.
+   * `--build-arg ARG_USER=toomas`: Sets the username for the non-root user.
+   * `--build-arg ARG_UID=1000`: Sets the user ID for the non-root user. Matching your host user ID can help with file permission issues when mounting volumes.
+   * `-t py31010`: Tags the image with the name `py31010`.
 
-COPY fix-permissions /usr/local/bin/fix-permissions
-RUN chmod +x /usr/local/bin/fix-permissions
+## Running the Container and Accessing Jupyter
 
-Download and Extract MicroMamba:
+To run the Docker image, use the following command:
 
-Dockerfile
+```bash
+docker run --rm -ti -p 8888:8888 -p 8899:8899 --name py31010 py31010 bash
+```
 
-RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | \
-    tar -xvj bin/micromamba
+**Explanation of options:**
 
-Set Environment Variables and User:
+* `docker run`:  Starts a container.
+* `--rm`: Automatically removes the container when it exits.
+* `-ti`: Allocates a pseudo-TTY connected to the container and keeps STDIN open, allowing you to interact with the shell.
+* `-p 8888:8888`: Maps port 8888 of the container to port 8888 on your host machine (for Jupyter Notebook).
+* `-p 8899:8899`: Maps port 8899 of the container to port 8899 on your host machine (for JupyterLab).
+* `--name py31010`: Assigns the name `py31010` to the running container.
+* `py31010`: Specifies the image to run.
+* `bash`:  Executes the `bash` command inside the container.
 
-Dockerfile
+**Accessing Jupyter:**
 
-# Set environment
-ARG ENV_VER=py3106labfin
-ARG NB_USER=toomas
-ARG NB_UID=1000
-ENV ENV_NAME=py3
-ENV USER ${NB_USER}
-ENV NB_UID ${NB_UID}
-ENV HOME=/home/${NB_USER}
-ENV MAMBA_EXE=/bin/micromamba
-ENV MAMBA_ROOT_PREFIX=/opt/conda
+Once the container is running, the `py3.sh` script is automatically executed when you enter the container via `bash`. 
 
-RUN adduser --disabled-password \
-    --gecos "Default user" \
-    --uid ${NB_UID} \
-    ${NB_USER} && \
-    ...
+```bash
+bash -c /usr/local/bin/py3.sh
+```
 
-Create and Activate Python Environment:
+This script starts:
 
-Dockerfile
+* **Jupyter Notebook:** Accessible in your web browser at `http://localhost:8888`.
+* **JupyterLab:** Accessible in your web browser at `http://localhost:8899`.
 
-COPY ${ENV_VER}.yml /tmp/py3.yml
-RUN micromamba env create -y -f /tmp/py3.yml
+Both Jupyter Notebook and JupyterLab are configured to run without requiring a token or password.
 
-Copy Scripts and Configuration Files:
+**Inside the Container:**
 
-Dockerfile
+After Jupyter services are started, you will be presented with a Bash prompt within the container. You can interact with the file system, manage your Conda environment, and perform other development tasks.
 
-COPY start_jupyter.sh /usr/local/bin/py3.sh
-...
-COPY custom.css ${HOME}/.jupyter/custom
-COPY nbconfig/common.json ${HOME}/.jupyter/nbconfig
-...
+## Using the Conda Environment
 
-Set Permissions and Switch User:
+Once inside the container, the Conda environment named `py3` (defined by `ENV_NAME=py3` in the Dockerfile) will be automatically activated. You can verify this by checking the prefix in your shell prompt.
 
-Dockerfile
+You can then use standard Conda/Micromamba commands to manage your environment:
 
-RUN fix-permissions ${HOME}
+* **List installed packages:**
+  ```bash
+  micromamba list
+  ```
+* **Install new packages:**
+  ```bash
+  micromamba install <package_name>
+  ```
+* **Deactivate the environment (if needed):**
+  ```bash
+  conda deactivate
+  ```
+* **Activate the environment (if deactivated):**
+  ```bash
+  conda activate py3
+  ```
 
-USER ${USER}
+## Customization
 
-Set Working Directory and Define Entry Point and Default Command:
+* **Python Version and Packages:** Customize the Python version and install specific packages by creating a YAML file (e.g., `py31010.yml`) and providing its name as the `PY_VER` build argument. The Dockerfile will automatically use this file to create the Conda environment.
+* **Username and User ID:** Change the default username (`toomas`) and user ID (`1000`) by modifying the `ARG_USER` and `ARG_UID` build arguments.
+* **Adding More Tools:**  Modify the `Dockerfile.base` to install additional software or libraries as needed.
 
-Dockerfile
+## Included Tools
 
-    WORKDIR ${HOME}
+* `bzip2`
+* `ca-certificates`
+* `curl`
+* `git`
+* `htop`
+* `libgtk-3-dev`
+* `mc`
+* `sudo`
+* `wget`
+* `micromamba`
+* Jupyter Notebook
+* JupyterLab
 
-    ENTRYPOINT ["bash", "-c", "/usr/local/bin/py3.sh"]
-    CMD ["bash"]
+## Contributing
 
-start_jupyter.sh:
+Feel free to contribute to this Docker image by submitting pull requests.
 
-This script activates the Python environment and starts Jupyter Notebook and JupyterLab:
+## License
 
-    Activates the Python environment with activate_py3.sh.
-    Starts Jupyter Notebook on port 8888 and JupyterLab on port 8899.
-    The --no-browser flag ensures that the browser doesn't open automatically.
-
-activate_py3.sh:
-
-This script uses MicroMamba to activate the specified Python environment.
-Summary:
-
-The Dockerfile creates a Debian-based Docker image, installs necessary packages, sets up a Python environment using MicroMamba, copies configuration files and scripts, and finally starts Jupyter Notebook and JupyterLab when a container is run based on this image. The image is designed to run as a non-root user with the specified UID and username.
-
-docker build --build-arg ENV_VER=py31010lf -t py31010lf .
-docker run --rm -ti -p 8996:8899 -p 8866:8888 -v /home/toomas/Dev:/home/toomas/Dev -v /home/toomas/Data:/home/toomas/Data -v /home/toomas/Dev/docker/conf:/home/toomas/.jupyter --name py31010lf py31010lf
-
-
+[Specify your license here if applicable]
