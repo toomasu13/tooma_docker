@@ -1,0 +1,10 @@
+name: py3
+channels:
+  - conda-forge
+dependencies:
+  - alpha_vantage 
+  - pip:
+      - arcticdb
+      - yahooquery
+      - financedatabase
+      - streamlit

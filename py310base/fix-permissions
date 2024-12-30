@@ -8,7 +8,7 @@ fi
 TARGET_DIR=$1
 
 # Fix ownership
-chown -R ${NB_UID}:${NB_GID:-${NB_UID}} ${TARGET_DIR}
+chown -R ${UID}:${GID:-${UID}} ${TARGET_DIR}
 
 # Fix permissions
 find ${TARGET_DIR} -type d -exec chmod 755 {} \;
